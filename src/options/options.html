@@ -2,11 +2,214 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Options</title>
+  <title>Secure Shelf - Options</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
-  <div id="options-root">Options Page</div>
+  <div class="container">
+    <header>
+      <img src="../assets/icon.png" alt="Secure Shelf Logo">
+      <h1>Secure Shelf Settings</h1>
+    </header>
+
+    <div id="status-message" class="status-message hidden"></div>
+
+    <div class="options-grid">
+      <!-- Security Settings -->
+      <div class="option-card">
+        <div class="option-title">Security</div>
+        <div class="option-description">Configure your vault security settings</div>
+        
+        <div class="form-group">
+          <label class="toggle-label">
+            <span>Auto-lock vault after inactivity</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="auto-lock-enabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label for="auto-lock-time">Auto-lock timeout (minutes)</label>
+          <input type="number" id="auto-lock-time" min="1" max="60" value="5">
+        </div>
+        
+        <div class="form-group">
+          <label for="key-stretching">Password strength (key stretching iterations)</label>
+          <select id="key-stretching">
+            <option value="100000">Standard (100,000 iterations)</option>
+            <option value="200000">Strong (200,000 iterations)</option>
+            <option value="500000">Very Strong (500,000 iterations)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Theme Settings -->
+      <div class="option-card">
+        <div class="option-title">Appearance</div>
+        <div class="option-description">Customize how Secure Shelf looks</div>
+        
+        <div class="form-group">
+          <label for="theme">Theme</label>
+          <select id="theme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="system">Use System Settings</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="font-size">Font Size</label>
+          <input type="range" id="font-size" min="12" max="20" value="14">
+          <span id="font-size-value">14px</span>
+        </div>
+      </div>
+
+      <!-- Autofill Settings -->
+      <div class="option-card">
+        <div class="option-title">Autofill</div>
+        <div class="option-description">Configure automatic form filling</div>
+        
+        <div class="form-group">
+          <label class="toggle-label">
+            <span>Enable autofill for forms</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="autofill-enabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label class="toggle-label">
+            <span>Show autofill icon in form fields</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="autofill-icon-enabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label class="toggle-label">
+            <span>Require confirmation before filling</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="autofill-confirmation" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+      </div>
+
+      <!-- Password Generator Settings -->
+      <div class="option-card">
+        <div class="option-title">Password Generator</div>
+        <div class="option-description">Default settings for generated passwords</div>
+        
+        <div class="form-group">
+          <label for="default-password-length">Default Password Length</label>
+          <input type="range" id="default-password-length" min="8" max="32" value="16">
+          <span id="default-length-value">16 characters</span>
+        </div>
+        
+        <div class="form-group">
+          <label class="toggle-label">
+            <span>Include uppercase letters (A-Z)</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="include-uppercase" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label class="toggle-label">
+            <span>Include lowercase letters (a-z)</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="include-lowercase" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label class="toggle-label">
+            <span>Include numbers (0-9)</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="include-numbers" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label class="toggle-label">
+            <span>Include symbols (!@#$%^&*)</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="include-symbols" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Master Password -->
+    <h2>Master Password</h2>
+    <div class="option-card">
+      <div class="option-title">Change Master Password</div>
+      <div class="option-description">Change the master password that unlocks your vault</div>
+      
+      <div class="form-group">
+        <label for="current-password">Current Master Password</label>
+        <input type="password" id="current-password" placeholder="Enter current password">
+      </div>
+      
+      <div class="form-group">
+        <label for="new-password">New Master Password</label>
+        <input type="password" id="new-password" placeholder="Enter new password">
+      </div>
+      
+      <div class="form-group">
+        <label for="confirm-password">Confirm New Password</label>
+        <input type="password" id="confirm-password" placeholder="Confirm new password">
+      </div>
+      
+      <div class="button-group">
+        <button id="change-password-button" class="primary">Change Password</button>
+      </div>
+    </div>
+
+    <!-- Data Management -->
+    <h2>Data Management</h2>
+    <div class="option-card">
+      <div class="option-title">Import & Export</div>
+      <div class="option-description">Manage your vault data</div>
+      
+      <div class="button-group">
+        <button id="export-button" class="outline">Export Vault</button>
+        <button id="import-button" class="outline">Import Vault</button>
+      </div>
+      
+      <input type="file" id="import-file" accept=".json" class="hidden">
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="danger-zone">
+      <h3>Danger Zone</h3>
+      <div class="option-description">These actions are irreversible</div>
+      
+      <div class="button-group">
+        <button id="clear-data-button" class="danger">Clear All Data</button>
+      </div>
+    </div>
+
+    <footer>
+      <p>Secure Shelf v1.0.0 | Your passwords are encrypted locally</p>
+    </footer>
+  </div>
+
   <script src="options.js"></script>
 </body>
 </html>
