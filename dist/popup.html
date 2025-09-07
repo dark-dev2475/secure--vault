@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Secure Shelf - Password Manager</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="screen active">
+      <div class="auth-screen">
+        <img src="../assets/icon.png" alt="Logo" />
+        <h1>Secure Shelf</h1>
+        
+        <div class="tabs">
+          <div id="login-tab" class="tab active">Login</div>
+          <div id="setup-tab" class="tab">Setup</div>
+        </div>
+        
+        <div id="login-form" class="auth-form">
+          <div class="message error hidden" id="login-error"></div>
+          
+          <div class="form-group">
+            <label for="master-password">Master Password</label>
+            <input type="password" id="master-password" placeholder="Enter your master password">
+          </div>
+          
+          <button id="unlock-button" class="primary">Unlock Vault</button>
+        </div>
+        
+        <div id="setup-form" class="auth-form hidden">
+          <div class="message error hidden" id="setup-error"></div>
+          
+          <div class="form-group">
+            <label for="new-master-password">New Master Password</label>
+            <input type="password" id="new-master-password" placeholder="Create a strong master password">
+          </div>
+          
+          <div class="form-group">
+            <label for="confirm-master-password">Confirm Master Password</label>
+            <input type="password" id="confirm-master-password" placeholder="Confirm your master password">
+          </div>
+          
+          <button id="setup-button" class="primary">Create Vault</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Dashboard Screen -->
+    <div id="dashboard-screen" class="screen">
+      <div class="dashboard-header">
+        <h1>Password Vault</h1>
+        <button id="lock-button" class="outline">Lock</button>
+      </div>
+      
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search credentials...">
+      </div>
+      
+      <div id="credentials-list" class="credentials-list">
+        <!-- Credentials will be populated here -->
+        <div class="message" id="empty-state">No credentials stored yet.</div>
+      </div>
+      
+      <div class="actions">
+        <button id="add-credential-button" class="primary">Add Credential</button>
+        <button id="options-button" class="outline">Options</button>
+      </div>
+    </div>
+    
+    <!-- Credential Detail Screen -->
+    <div id="detail-screen" class="screen">
+      <div class="dashboard-header">
+        <h1>Credential Details</h1>
+        <button id="back-to-list-button" class="outline">Back</button>
+      </div>
+      
+      <div class="detail-view">
+        <div class="detail-row">
+          <div class="detail-label">Website/App</div>
+          <div id="detail-url" class="detail-value"></div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-label">Username</div>
+          <div id="detail-username" class="detail-value">
+            <span id="username-value"></span>
+            <button id="copy-username" class="copy-button">Copy</button>
+          </div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-label">Password</div>
+          <div id="detail-password" class="detail-value">
+            <span id="password-value">••••••••</span>
+            <button id="show-password" class="copy-button">Show</button>
+            <button id="copy-password" class="copy-button">Copy</button>
+          </div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-label">Notes</div>
+          <div id="detail-notes" class="detail-value"></div>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <button id="edit-credential-button" class="primary">Edit</button>
+        <button id="delete-credential-button" class="danger">Delete</button>
+      </div>
+    </div>
+    
+    <!-- Add/Edit Credential Screen -->
+    <div id="credential-form-screen" class="screen">
+      <div class="dashboard-header">
+        <h1 id="form-title">Add Credential</h1>
+        <button id="cancel-form-button" class="outline">Cancel</button>
+      </div>
+      
+      <div class="message error hidden" id="form-error"></div>
+      
+      <div class="credential-form">
+        <div class="form-group">
+          <label for="credential-url">Website/App URL</label>
+          <input type="url" id="credential-url" placeholder="https://example.com">
+        </div>
+        
+        <div class="form-group">
+          <label for="credential-name">Name</label>
+          <input type="text" id="credential-name" placeholder="Example Account">
+        </div>
+        
+        <div class="form-group">
+          <label for="credential-username">Username</label>
+          <input type="text" id="credential-username" placeholder="your.email@example.com">
+        </div>
+        
+        <div class="form-group">
+          <label for="credential-password">Password</label>
+          <div class="password-group">
+            <input type="password" id="credential-password" placeholder="Password">
+            <button type="button" id="generate-password" class="generate-password" title="Generate Password">🎲</button>
+            <button type="button" id="toggle-password" class="toggle-password" title="Show/Hide Password">👁️</button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="credential-notes">Notes</label>
+          <textarea id="credential-notes" rows="3" placeholder="Additional information..."></textarea>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <button id="save-credential-button" class="primary">Save</button>
+      </div>
+    </div>
+    
+    <!-- Generate Password Screen -->
+    <div id="generate-password-screen" class="screen">
+      <div class="dashboard-header">
+        <h1>Generate Password</h1>
+        <button id="close-generator-button" class="outline">Close</button>
+      </div>
+      
+      <div class="form-group">
+        <label for="password-length">Password Length</label>
+        <input type="range" id="password-length" min="8" max="32" value="16">
+        <span id="length-value">16</span> characters
+      </div>
+      
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="include-uppercase" checked>
+          Include Uppercase Letters (A-Z)
+        </label>
+      </div>
+      
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="include-lowercase" checked>
+          Include Lowercase Letters (a-z)
+        </label>
+      </div>
+      
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="include-numbers" checked>
+          Include Numbers (0-9)
+        </label>
+      </div>
+      
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="include-symbols" checked>
+          Include Symbols (!@#$%^&*)
+        </label>
+      </div>
+      
+      <div class="form-group">
+        <label for="generated-password">Generated Password</label>
+        <div class="password-group">
+          <input type="text" id="generated-password" readonly>
+          <button type="button" id="copy-generated" class="copy-button" title="Copy Password">📋</button>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <button id="regenerate-button" class="primary">Regenerate</button>
+        <button id="use-password-button" class="success">Use This Password</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
