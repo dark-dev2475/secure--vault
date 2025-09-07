@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Generator</title>
+  <link rel="stylesheet" href="generator.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Password Generator</h1>
+    
+    <div class="generator-type-selector">
+      <button id="passwordTabBtn" class="tab-btn active">Password</button>
+      <button id="passphraseTabBtn" class="tab-btn">Passphrase</button>
+      <button id="pinTabBtn" class="tab-btn">PIN</button>
+    </div>
+    
+    <div class="generator-output">
+      <div class="password-display">
+        <input type="text" id="generatedOutput" readonly>
+        <button id="copyBtn" title="Copy to clipboard">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+        <button id="refreshBtn" title="Generate new">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"></path>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="strength-meter">
+        <div class="strength-label">Strength: <span id="strengthText">Medium</span></div>
+        <div class="meter-bar">
+          <div id="strengthMeter" class="meter-fill" style="width: 50%;"></div>
+        </div>
+        <div id="strengthFeedback" class="strength-feedback">Add more variety for a stronger password</div>
+      </div>
+    </div>
+    
+    <!-- Password Settings -->
+    <div id="passwordSettings" class="settings-panel active">
+      <div class="setting-group">
+        <label for="passwordLength">Length: <span id="lengthValue">16</span></label>
+        <input type="range" id="passwordLength" min="8" max="64" step="1" value="16">
+      </div>
+      
+      <div class="setting-group">
+        <div class="checkbox-setting">
+          <input type="checkbox" id="uppercase" checked>
+          <label for="uppercase">A-Z</label>
+        </div>
+        
+        <div class="checkbox-setting">
+          <input type="checkbox" id="lowercase" checked>
+          <label for="lowercase">a-z</label>
+        </div>
+        
+        <div class="checkbox-setting">
+          <input type="checkbox" id="numbers" checked>
+          <label for="numbers">0-9</label>
+        </div>
+        
+        <div class="checkbox-setting">
+          <input type="checkbox" id="symbols" checked>
+          <label for="symbols">!@#$%^&*</label>
+        </div>
+      </div>
+      
+      <div class="advanced-settings-toggle">
+        <button id="showAdvancedBtn">Show Advanced Options</button>
+      </div>
+      
+      <div id="advancedSettings" class="advanced-settings" style="display: none;">
+        <div class="checkbox-setting">
+          <input type="checkbox" id="excludeAmbiguous">
+          <label for="excludeAmbiguous">Exclude ambiguous characters (1, l, I, 0, O)</label>
+        </div>
+        
+        <div class="checkbox-setting">
+          <input type="checkbox" id="excludeSimilar">
+          <label for="excludeSimilar">Exclude similar characters (i, l, 1, L, o, 0, O)</label>
+        </div>
+        
+        <div class="checkbox-setting">
+          <input type="checkbox" id="avoidConsecutive">
+          <label for="avoidConsecutive">Avoid consecutive characters</label>
+        </div>
+        
+        <div class="checkbox-setting">
+          <input type="checkbox" id="avoidRepeats">
+          <label for="avoidRepeats">Avoid repeating characters</label>
+        </div>
+        
+        <div class="input-setting">
+          <label for="requiredChars">Required characters:</label>
+          <input type="text" id="requiredChars" placeholder="e.g. !@#">
+        </div>
+        
+        <div class="input-setting">
+          <label for="excludedChars">Excluded characters:</label>
+          <input type="text" id="excludedChars" placeholder="e.g. oO0">
+        </div>
+      </div>
+    </div>
+    
+    <!-- Passphrase Settings -->
+    <div id="passphraseSettings" class="settings-panel">
+      <div class="setting-group">
+        <label for="wordCount">Number of Words: <span id="wordCountValue">4</span></label>
+        <input type="range" id="wordCount" min="3" max="10" step="1" value="4">
+      </div>
+      
+      <div class="checkbox-setting">
+        <input type="checkbox" id="capitalize" checked>
+        <label for="capitalize">Capitalize Words</label>
+      </div>
+      
+      <div class="checkbox-setting">
+        <input type="checkbox" id="includeNumber" checked>
+        <label for="includeNumber">Include Number</label>
+      </div>
+      
+      <div class="checkbox-setting">
+        <input type="checkbox" id="includeSymbol" checked>
+        <label for="includeSymbol">Include Symbol</label>
+      </div>
+      
+      <div class="setting-group">
+        <label for="separator">Word Separator:</label>
+        <select id="separator">
+          <option value="-">Hyphen (-)</option>
+          <option value=".">Period (.)</option>
+          <option value="_">Underscore (_)</option>
+          <option value=" ">Space ( )</option>
+          <option value="">No Separator</option>
+        </select>
+      </div>
+    </div>
+    
+    <!-- PIN Settings -->
+    <div id="pinSettings" class="settings-panel">
+      <div class="setting-group">
+        <label for="pinLength">PIN Length: <span id="pinLengthValue">4</span></label>
+        <input type="range" id="pinLength" min="4" max="12" step="1" value="4">
+      </div>
+      
+      <div class="checkbox-setting">
+        <input type="checkbox" id="pinAvoidRepeats">
+        <label for="pinAvoidRepeats">No Repeated Digits</label>
+      </div>
+      
+      <div class="checkbox-setting">
+        <input type="checkbox" id="pinAvoidConsecutive">
+        <label for="pinAvoidConsecutive">No Consecutive Digits</label>
+      </div>
+    </div>
+    
+    <div class="action-buttons">
+      <button id="usePasswordBtn" class="primary-btn">Use Password</button>
+      <button id="saveSettingsBtn">Save Settings</button>
+    </div>
+  </div>
+  
+  <script type="module" src="generator-ui.js"></script>
+</body>
+</html>
