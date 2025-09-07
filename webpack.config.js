@@ -3,11 +3,10 @@ const path = require('path');
 
 module.exports = {
   entry: {
-    background: './src/background.js',
-    content: './src/content.js',
-    popup: './src/popup.js',
-    options: './src/options.js',
-    injected: './src/injected.js'
+    background: './src/background/background.js',
+    content: './src/content/content.js',
+    popup: './src/popup/popup.js',
+    options: './src/options/options.js'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -18,10 +17,9 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: 'manifest.json', to: 'manifest.json' },
-        { from: 'src/popup.html', to: 'popup.html' },
-        { from: 'src/options.html', to: 'options.html' },
-        { from: 'icons', to: 'icons' },
-        { from: 'src/styles', to: 'styles' }
+        { from: 'src/popup/popup.html', to: 'popup.html' },
+        { from: 'src/options/options.html', to: 'options.html' },
+        { from: 'assets', to: 'assets' }
       ]
     })
   ],
