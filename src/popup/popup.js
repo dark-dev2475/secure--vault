@@ -91,6 +91,19 @@ let editMode = false;
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    // Set up message listener for background service worker
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.action === 'autoLockVault') {
+        // Auto-lock vault
+        lockVault();
+        
+        // Show appropriate screen
+        showScreen('auth');
+        displayMessage(loginError, 'Vault has been automatically locked for security.');
+      }
+      return true;
+    });
+    
     // Check if vault is initialized
     const initialized = await isVaultInitialized();
     

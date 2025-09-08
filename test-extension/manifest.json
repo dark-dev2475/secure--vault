@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Simple Test Extension",
+  "version": "1.0.0",
+  "description": "Testing service worker loading",
+  "permissions": ["storage"],
+  "background": {
+    "service_worker": "worker.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Test Extension"
+  }
+}

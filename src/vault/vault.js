@@ -17,7 +17,6 @@ const SALT_SETTING_ID = 'vault-salt';
 // In-memory state (cleared when extension is unloaded)
 let masterKey = null;
 let isVaultLocked = true;
-let vaultTimeout = null;
 
 /**
  * Initializes the vault on first use
@@ -118,15 +117,11 @@ export async function unlockVault(masterPassword, autoLockTimeout = 5) {
       
       isVaultLocked = false;
       
-      // Set auto-lock timer if timeout > 0
-      if (autoLockTimeout > 0) {
-        if (vaultTimeout) {
-          clearTimeout(vaultTimeout);
-        }
-        vaultTimeout = setTimeout(() => {
-          lockVault();
-        }, autoLockTimeout * 60 * 1000);
-      }
+      // Notify the service worker to start auto-lock timer
+      chrome.runtime.sendMessage({
+        action: 'unlockVault',
+        lockAfterMinutes: autoLockTimeout
+      });
       
       return true;
     } catch (error) {
@@ -147,10 +142,10 @@ export function lockVault() {
   masterKey = null;
   isVaultLocked = true;
   
-  if (vaultTimeout) {
-    clearTimeout(vaultTimeout);
-    vaultTimeout = null;
-  }
+  // Notify the service worker to clear auto-lock timer
+  chrome.runtime.sendMessage({
+    action: 'lockVault'
+  });
 }
 
 /**

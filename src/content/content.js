@@ -26,13 +26,13 @@ let credentialsForPage = null;
       };
     }
     
+    // Listen for messages from background script
+    setupMessageListener();
+
     // If autofill is disabled, don't continue
     if (!settings.autofillEnabled) {
       return;
     }
-    
-    // Setup message listener
-    chrome.runtime.onMessage.addListener(handleMessage);
     
     // Request credentials for current page
     requestCredentialsForCurrentPage();
@@ -491,16 +491,69 @@ function autofillCredential(credential) {
   });
 }
 
-// Handle messages from background script
-function handleMessage(message, sender, sendResponse) {
-  if (message.action === 'credentialsUpdated') {
-    credentialsForPage = message.credentials;
-    scanForForms();
-    sendResponse({ success: true });
-  }
+/**
+ * Sets up message listener for background script communications
+ */
+function setupMessageListener() {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    // Process all message types in one place
+    if (message.action === 'requestFillCredential') {
+      // Show credential selection UI near the active input
+      showCredentialSelector();
+      sendResponse({ success: true });
+    } else if (message.action === 'requestGeneratePassword') {
+      // Open password generator popup
+      chrome.runtime.sendMessage({ 
+        action: 'openPasswordGenerator', 
+        targetField: getActiveInputIdentifier() 
+      });
+      sendResponse({ success: true });
+    } else if (message.action === 'credentialsUpdated') {
+      credentialsForPage = message.credentials;
+      scanForForms();
+      sendResponse({ success: true });
+    } else if (message.action === 'fillCredential') {
+      autofillCredential(message.credential);
+      sendResponse({ success: true });
+    }
+    
+    return true; // Indicate async response
+  });
+}
+
+/**
+ * Shows a UI for selecting credentials near the active input field
+ */
+function showCredentialSelector() {
+  // Get the URL of the page to find matching credentials
+  const url = window.location.href;
   
-  if (message.action === 'fillCredential') {
-    autofillCredential(message.credential);
-    sendResponse({ success: true });
+  // Request credentials from background
+  chrome.runtime.sendMessage({ 
+    action: 'getCredentialsForUrl', 
+    url: url 
+  }, (response) => {
+    if (response && response.credentials && response.credentials.length > 0) {
+      displayCredentialOptions(response.credentials);
+    } else {
+      showNotification('No saved credentials found for this site');
+    }
+  });
+}
+
+/**
+ * Get identifier for the active input field
+ */
+function getActiveInputIdentifier() {
+  const activeElement = document.activeElement;
+  if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+    // Create a unique identifier for this input
+    return {
+      id: activeElement.id,
+      name: activeElement.name,
+      type: activeElement.type,
+      form: activeElement.form ? activeElement.form.id : null
+    };
   }
+  return null;
 }

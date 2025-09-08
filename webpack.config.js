@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports = {
   entry: {
-    background: './src/background/background.js',
+    // No background service worker (using standalone worker.js)
     content: './src/content/content.js',
     popup: './src/popup/popup.js',
     options: './src/options/options.js',
@@ -12,7 +12,9 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].js',
-    clean: true
+    clean: {
+      keep: /worker\.js$/ // Keep worker.js when cleaning output directory
+    }
   },
   plugins: [
     new CopyPlugin({
@@ -24,7 +26,7 @@ module.exports = {
         { from: 'src/options/options.css', to: 'options.css' },
         { from: 'src/generator/generator.html', to: 'generator.html' },
         { from: 'src/generator/generator.css', to: 'generator.css' },
-        { from: 'assets', to: 'assets' }
+        { from: 'worker.js', to: 'worker.js' }
       ]
     })
   ],
