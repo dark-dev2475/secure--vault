@@ -72,8 +72,15 @@ function resetLockTimer(minutes) {
   lockTimeoutId = setTimeout(() => {
     // Send lock message to any open popups
     chrome.runtime.sendMessage({ action: 'autoLockVault' });
+    
+    // Update icon to locked state
+    chrome.action.setIcon({ path: { '128': 'icons/icon128-locked.svg' } });
+    
     lockTimeoutId = null;
   }, milliseconds);
+  
+  // Update icon to unlocked state
+  chrome.action.setIcon({ path: { '128': 'icons/icon128.svg' } });
 }
 
 function clearLockTimer() {
@@ -81,6 +88,9 @@ function clearLockTimer() {
     clearTimeout(lockTimeoutId);
     lockTimeoutId = null;
   }
+  
+  // Update icon to locked state
+  chrome.action.setIcon({ path: { '128': 'icons/icon128-locked.svg' } });
 }
 
 // Initialize on install/update

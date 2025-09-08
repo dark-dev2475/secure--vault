@@ -26,7 +26,8 @@ module.exports = {
         { from: 'src/options/options.css', to: 'options.css' },
         { from: 'src/generator/generator.html', to: 'generator.html' },
         { from: 'src/generator/generator.css', to: 'generator.css' },
-        { from: 'worker.js', to: 'worker.js' }
+        { from: 'worker.js', to: 'worker.js' },
+        { from: 'assets/icons', to: 'icons' }
       ]
     })
   ],
