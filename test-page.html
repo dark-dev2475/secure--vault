@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Lock and Autofill Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .login-form {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #005a87;
+        }
+        
+        .pseudo-form {
+            background: #e8f4fd;
+            border: 2px dashed #007cba;
+        }
+        
+        .status {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .timer-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007cba;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Secure Shelf - Auto-Lock & Autofill Test Page</h1>
+    
+    <div class="test-section">
+        <h2>⏱️ Auto-Lock Timer Test</h2>
+        <p>Use this section to test the auto-lock timing:</p>
+        <div id="timer-status" class="status">
+            <div class="timer-display" id="timer-display">Timer not started</div>
+            <p>Instructions:</p>
+            <ol>
+                <li>Open the extension popup and unlock your vault</li>
+                <li>Check the console for timer logs</li>
+                <li>The vault should auto-lock after the time you set in options</li>
+                <li>Activity on this page should reset the timer</li>
+            </ol>
+        </div>
+        
+        <button onclick="testActivity()">Test Activity (Reset Timer)</button>
+        <button onclick="checkConsole()">Open Console</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Standard HTML Form Test</h2>
+        <p>This is a standard HTML form that should be detected by the extension:</p>
+        
+        <form class="login-form" name="loginForm">
+            <div class="form-group">
+                <label for="username">Username/Email:</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username or email">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password">
+            </div>
+            
+            <button type="submit">Sign In</button>
+        </form>
+    </div>
+
+    <div class="test-section">
+        <h2>📱 Modern App Style Form (Pseudo-Form)</h2>
+        <p>This simulates modern web app login forms that don't use HTML form tags:</p>
+        
+        <div class="login-form pseudo-form" id="modern-login">
+            <div class="form-group">
+                <label for="modern-email">Email Address:</label>
+                <input type="email" id="modern-email" placeholder="user@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="modern-password">Password:</label>
+                <input type="password" id="modern-password" placeholder="Password">
+            </div>
+            
+            <button onclick="modernLogin()">Log In</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Standalone Password Field Test</h2>
+        <p>This tests detection of password fields not inside forms:</p>
+        
+        <div class="login-form">
+            <div class="form-group">
+                <label for="standalone-username">Username:</label>
+                <input type="text" id="standalone-username" placeholder="Username">
+            </div>
+            
+            <div class="form-group">
+                <label for="standalone-password">Change Password:</label>
+                <input type="password" id="standalone-password" placeholder="New password">
+            </div>
+            
+            <button onclick="changePassword()">Update Password</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔄 Dynamic Content Test</h2>
+        <p>Click the button below to dynamically load a login form (tests SPA detection):</p>
+        
+        <button onclick="loadDynamicForm()">Load Dynamic Login Form</button>
+        <div id="dynamic-content"></div>
+    </div>
+
+    <script>
+        let activityCount = 0;
+        
+        function testActivity() {
+            activityCount++;
+            document.getElementById('timer-display').textContent = `Activity #${activityCount} - Timer should reset`;
+            
+            // Simulate various activities
+            document.dispatchEvent(new Event('mousemove'));
+            document.dispatchEvent(new Event('keypress'));
+            
+            setTimeout(() => {
+                document.getElementById('timer-display').textContent = 'Activity detected - Check console for timer reset';
+            }, 1000);
+        }
+        
+        function checkConsole() {
+            alert('Press F12 to open Developer Tools and check the Console tab for auto-lock timer logs.');
+        }
+        
+        function modernLogin() {
+            alert('Modern login attempted! Extension should have detected this pseudo-form.');
+        }
+        
+        function changePassword() {
+            alert('Password change attempted! Extension should have detected standalone fields.');
+        }
+        
+        function loadDynamicForm() {
+            const content = document.getElementById('dynamic-content');
+            
+            if (content.innerHTML) {
+                content.innerHTML = '';
+                return;
+            }
+            
+            // Simulate AJAX content loading
+            setTimeout(() => {
+                content.innerHTML = `
+                    <div class="login-form" style="margin-top: 15px;">
+                        <h4>🆕 Dynamically Loaded Form</h4>
+                        <div class="form-group">
+                            <label for="ajax-user">Username:</label>
+                            <input type="text" id="ajax-user" placeholder="Ajax loaded username">
+                        </div>
+                        <div class="form-group">
+                            <label for="ajax-pass">Password:</label>
+                            <input type="password" id="ajax-pass" placeholder="Ajax loaded password">
+                        </div>
+                        <button onclick="ajaxLogin()">Ajax Login</button>
+                    </div>
+                `;
+            }, 500);
+        }
+        
+        function ajaxLogin() {
+            alert('Ajax login attempted! Extension should have detected this dynamically loaded form.');
+        }
+        
+        // Add some activity monitoring
+        let lastActivity = Date.now();
+        
+        document.addEventListener('mousemove', () => {
+            const now = Date.now();
+            if (now - lastActivity > 5000) { // Only update every 5 seconds
+                lastActivity = now;
+                document.getElementById('timer-display').textContent = 'Mouse activity detected';
+            }
+        });
+        
+        document.addEventListener('keypress', () => {
+            const now = Date.now();
+            if (now - lastActivity > 5000) {
+                lastActivity = now;
+                document.getElementById('timer-display').textContent = 'Keyboard activity detected';
+            }
+        });
+        
+        // Prevent form submissions for testing
+        document.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Form submission prevented for testing. Extension should have detected this form!');
+        });
+        
+        console.log('🔐 Secure Shelf Test Page Loaded');
+        console.log('This page is ready to test auto-lock timing and form detection.');
+        console.log('Open the extension popup to unlock your vault and start testing!');
+    </script>
+</body>
+</html>

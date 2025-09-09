@@ -10,6 +10,7 @@ const ICON_SIZE = 20;
 let settings = null;
 let formObserver = null;
 let credentialsForPage = null;
+let userAutoLockMinutes = 5; // Cache the auto-lock setting
 
 // Initialize
 (async function init() {
@@ -42,6 +43,48 @@ let credentialsForPage = null;
     
     // Scan for existing forms
     scanForForms();
+    
+    // Also scan on window load to catch late-rendered forms
+    window.addEventListener('load', () => {
+      setTimeout(scanForForms, 1000);
+    });
+    
+    // And scan on DOM changes that might indicate SPA navigation
+    const bodyObserver = new MutationObserver(() => {
+      setTimeout(scanForForms, 500);
+    });
+    bodyObserver.observe(document.body, { childList: true, subtree: true });
+    
+    // Listen for URL changes in SPAs
+    let lastUrl = location.href;
+    const urlObserver = new MutationObserver(() => {
+      if (location.href !== lastUrl) {
+        lastUrl = location.href;
+        console.log('URL changed to:', lastUrl);
+        setTimeout(() => {
+          requestCredentialsForCurrentPage();
+          scanForForms();
+        }, 500);
+      }
+    });
+    urlObserver.observe(document, { subtree: true, childList: true });
+    
+    // Listen for specific SPA framework events
+    window.addEventListener('popstate', () => {
+      console.log('History state changed');
+      setTimeout(scanForForms, 500);
+    });
+    
+    // For React, Angular, Vue, etc. navigation
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(scanForForms, 1000);
+    });
+    
+    // Monitor AJAX requests to catch dynamically loaded forms
+    monitorAjaxRequests();
+    
+    // Monitor user activity to reset auto-lock timer
+    setupActivityMonitoring();
     
   } catch (error) {
     console.error('Content script initialization error:', error);
@@ -95,7 +138,11 @@ function startFormObserver() {
 
 // Scan for forms
 function scanForForms() {
+  console.log('Scanning for forms on page:', window.location.href);
+  
+  // First look for standard forms
   const forms = document.querySelectorAll('form:not([' + FORM_OBSERVED_ATTR + '])');
+  console.log(`Found ${forms.length} unprocessed forms`);
   
   forms.forEach(form => {
     // Mark as observed
@@ -106,6 +153,7 @@ function scanForForms() {
     
     // If we found fields, enhance them
     if (fields.usernameField || fields.passwordField) {
+      console.log('Found login form:', fields);
       enhanceForm(form, fields);
     }
   });
@@ -113,8 +161,13 @@ function scanForForms() {
   // Also look for standalone password fields (not in forms)
   const standaloneFields = findStandaloneFields();
   if (standaloneFields.length > 0) {
+    console.log(`Found ${standaloneFields.length} standalone login fields`);
     enhanceStandaloneFields(standaloneFields);
   }
+  
+  // Look for containers that might be login forms but aren't actual <form> elements
+  // This helps with modern web apps that don't use standard forms
+  findPseudoForms();
 }
 
 // Find username and password fields in a form
@@ -204,6 +257,85 @@ function findStandaloneFields() {
   return result;
 }
 
+/**
+ * Find containers that look like login forms but aren't standard <form> elements
+ * This helps detect login forms in modern SPAs and frameworks
+ */
+function findPseudoForms() {
+  // Look for common login form containers
+  const possibleContainers = [
+    ...document.querySelectorAll('div[class*="login"]:not([' + FORM_OBSERVED_ATTR + '])'),
+    ...document.querySelectorAll('div[class*="signin"]:not([' + FORM_OBSERVED_ATTR + '])'),
+    ...document.querySelectorAll('div[class*="auth"]:not([' + FORM_OBSERVED_ATTR + '])'),
+    ...document.querySelectorAll('div[id*="login"]:not([' + FORM_OBSERVED_ATTR + '])'),
+    ...document.querySelectorAll('div[id*="signin"]:not([' + FORM_OBSERVED_ATTR + '])'),
+    ...document.querySelectorAll('div[id*="auth"]:not([' + FORM_OBSERVED_ATTR + '])')
+  ];
+  
+  // Also look for specific patterns like an input followed by a password field
+  const allInputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"])');
+  const inputPairs = [];
+  
+  for (let i = 0; i < allInputs.length - 1; i++) {
+    const currentInput = allInputs[i];
+    const nextInput = allInputs[i + 1];
+    
+    // If we have a text input followed by a password input, likely a login form
+    if ((currentInput.type === 'text' || currentInput.type === 'email') && 
+        nextInput.type === 'password' &&
+        !currentInput.closest('form') && !nextInput.closest('form')) {
+      
+      // Find a common parent
+      let parent = currentInput.parentElement;
+      while (parent && !parent.contains(nextInput)) {
+        parent = parent.parentElement;
+      }
+      
+      if (parent && !parent.hasAttribute(FORM_OBSERVED_ATTR)) {
+        parent.setAttribute(FORM_OBSERVED_ATTR, 'true');
+        possibleContainers.push(parent);
+      }
+    }
+  }
+  
+  // Process each potential login container
+  possibleContainers.forEach(container => {
+    container.setAttribute(FORM_OBSERVED_ATTR, 'true');
+    
+    // Find inputs inside this container
+    const inputs = container.querySelectorAll('input');
+    if (inputs.length < 2) return; // Need at least 2 inputs for a login form
+    
+    const fields = {
+      usernameField: null,
+      passwordField: null
+    };
+    
+    // Find password field first
+    const passwordFields = container.querySelectorAll('input[type="password"]');
+    if (passwordFields.length > 0) {
+      fields.passwordField = passwordFields[0];
+      
+      // Now look for a username field
+      const otherInputs = Array.from(inputs).filter(
+        input => input !== fields.passwordField && 
+                 input.type !== 'hidden' && 
+                 input.type !== 'submit' && 
+                 input.type !== 'button'
+      );
+      
+      if (otherInputs.length > 0) {
+        fields.usernameField = otherInputs[0]; // Take the first non-password field as username
+      }
+      
+      if (fields.usernameField || fields.passwordField) {
+        console.log('Found pseudo-form login:', container, fields);
+        enhanceForm(container, fields);
+      }
+    }
+  });
+}
+
 // Find a username field near a standalone password field
 function findNearbyUsernameField(passwordField) {
   // Try siblings first
@@ -237,6 +369,91 @@ function findNearbyUsernameField(passwordField) {
   }
   
   return null;
+}
+
+/**
+ * Monitors AJAX requests to detect content loading
+ * This helps catch forms loaded by AJAX in single-page applications
+ */
+function monitorAjaxRequests() {
+  // Save original XMLHttpRequest
+  const originalXHR = window.XMLHttpRequest;
+  
+  // Create new constructor
+  window.XMLHttpRequest = function() {
+    const xhr = new originalXHR();
+    
+    // Override the onreadystatechange property
+    const originalOnReadyStateChange = xhr.onreadystatechange;
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        // AJAX request completed
+        console.log('AJAX request completed');
+        // Wait a bit for DOM to update
+        setTimeout(() => {
+          scanForForms();
+        }, 500);
+      }
+      
+      // Call original handler
+      if (originalOnReadyStateChange) {
+        originalOnReadyStateChange.apply(this, arguments);
+      }
+    };
+    
+    return xhr;
+  };
+
+  // Also monitor fetch API
+  const originalFetch = window.fetch;
+  window.fetch = function() {
+    return originalFetch.apply(this, arguments)
+      .then(response => {
+        // Request completed
+        setTimeout(() => {
+          scanForForms();
+        }, 500);
+        return response;
+      });
+  };
+}
+
+/**
+ * Setup activity monitoring to reset auto-lock timer
+ */
+function setupActivityMonitoring() {
+  let lastActivity = Date.now();
+  
+  // Get user auto-lock setting
+  getSettings('user-settings').then(userSettings => {
+    if (userSettings && userSettings.autoLockTime > 0) {
+      userAutoLockMinutes = userSettings.autoLockTime;
+    }
+  });
+  
+  // Monitor various user activities
+  const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+  
+  const resetTimer = () => {
+    const now = Date.now();
+    // Only reset timer if enough time has passed since last reset (prevent spam)
+    if (now - lastActivity > 30000) { // 30 seconds
+      lastActivity = now;
+      
+      // Tell background script to reset the timer
+      chrome.runtime.sendMessage({
+        action: 'resetAutoLockTimer',
+        lockAfterMinutes: userAutoLockMinutes
+      }).catch(() => {
+        // Ignore errors if background script is not available
+      });
+    }
+  };
+  
+  // Add event listeners for activity
+  activityEvents.forEach(eventType => {
+    document.addEventListener(eventType, resetTimer, { passive: true });
+  });
 }
 
 // Enhance a form with autofill functionality
@@ -451,44 +668,56 @@ function autofillCredential(credential) {
       return;
     }
   }
-  
-  // Find all username and password fields
+
+  // Helper to fill a field and trigger all relevant events
+  function fillField(field, value) {
+    if (!field) return;
+    field.focus();
+    field.value = value;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+    field.dispatchEvent(new Event('blur', { bubbles: true }));
+    // For React/Vue/Angular sites
+    field.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a' }));
+    field.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'a' }));
+  }
+
+  // Try to fill all forms
+  let filled = false;
   const forms = document.querySelectorAll('form');
-  
   forms.forEach(form => {
     const fields = findFormFields(form);
-    
-    if (fields.usernameField) {
-      fields.usernameField.value = credential.username;
-      // Trigger input event to notify the page
-      fields.usernameField.dispatchEvent(new Event('input', { bubbles: true }));
-      fields.usernameField.dispatchEvent(new Event('change', { bubbles: true }));
+    if (fields.usernameField && credential.username) {
+      fillField(fields.usernameField, credential.username);
+      filled = true;
     }
-    
-    if (fields.passwordField) {
-      fields.passwordField.value = credential.password;
-      // Trigger input event to notify the page
-      fields.passwordField.dispatchEvent(new Event('input', { bubbles: true }));
-      fields.passwordField.dispatchEvent(new Event('change', { bubbles: true }));
+    if (fields.passwordField && credential.password) {
+      fillField(fields.passwordField, credential.password);
+      filled = true;
     }
   });
-  
+
   // Also fill standalone fields
   const standaloneFields = findStandaloneFields();
-  
   standaloneFields.forEach(fields => {
-    if (fields.usernameField) {
-      fields.usernameField.value = credential.username;
-      fields.usernameField.dispatchEvent(new Event('input', { bubbles: true }));
-      fields.usernameField.dispatchEvent(new Event('change', { bubbles: true }));
+    if (fields.usernameField && credential.username) {
+      fillField(fields.usernameField, credential.username);
+      filled = true;
     }
-    
-    if (fields.passwordField) {
-      fields.passwordField.value = credential.password;
-      fields.passwordField.dispatchEvent(new Event('input', { bubbles: true }));
-      fields.passwordField.dispatchEvent(new Event('change', { bubbles: true }));
+    if (fields.passwordField && credential.password) {
+      fillField(fields.passwordField, credential.password);
+      filled = true;
     }
   });
+
+  // Fallback: try to fill any visible input fields if nothing was filled
+  if (!filled) {
+    const allInputs = Array.from(document.querySelectorAll('input'));
+    const userCandidates = allInputs.filter(i => i.type !== 'password' && i.offsetParent !== null);
+    const passCandidates = allInputs.filter(i => i.type === 'password' && i.offsetParent !== null);
+    if (userCandidates.length && credential.username) fillField(userCandidates[0], credential.username);
+    if (passCandidates.length && credential.password) fillField(passCandidates[0], credential.password);
+  }
 }
 
 /**

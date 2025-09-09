@@ -14,6 +14,7 @@ import {
 } from '../vault/vault.js';
 
 import { generatePassword } from '../generator/generator.js';
+import { getSettings, saveSettings } from '../storage/storage.js';
 
 // DOM Elements
 const screens = {
@@ -93,8 +94,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     // Set up message listener for background service worker
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      console.log('Popup received message:', message.action);
       if (message.action === 'autoLockVault') {
         // Auto-lock vault
+        console.log('Auto-locking vault from popup');
         lockVault();
         
         // Show appropriate screen
@@ -162,6 +165,57 @@ unlockButton.addEventListener('click', async () => {
     const success = await unlockVault(password);
     
     if (success) {
+      // Get user auto-lock settings
+      let autoLockMinutes = 5; // Default
+      try {
+        const userSettings = await getSettings('user-settings');
+        console.log('🔧 Popup: Retrieved user settings:', userSettings);
+        if (userSettings) {
+          if (userSettings.autoLockEnabled === false) {
+            autoLockMinutes = 0; // Disable auto-lock
+          } else if (userSettings.autoLockTime > 0) {
+            autoLockMinutes = userSettings.autoLockTime;
+          }
+        } else {
+          // No settings found, use default and create them
+          console.log('🔧 Popup: No user settings found, using defaults');
+          const defaultSettings = {
+            id: 'user-settings',
+            autoLockEnabled: true,
+            autoLockTime: 5
+          };
+          // Save default settings
+          await saveSettings(defaultSettings);
+          console.log('🔧 Popup: Saved default settings');
+        }
+        console.log(`🔧 Popup: Using auto-lock timeout: ${autoLockMinutes} minutes`);
+      } catch (e) {
+        console.error('🔧 Error getting user settings for auto-lock:', e);
+        // Use default on error
+        autoLockMinutes = 5;
+      }
+
+      // Inform background to align its state and reset activity timers
+      try {
+        console.log('🔧 Popup: Sending unlock message to background with lockAfterMinutes:', autoLockMinutes);
+        await new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage({ 
+            action: 'unlockVault', 
+            masterPassword: password,
+            lockAfterMinutes: autoLockMinutes
+          }, (resp) => {
+            console.log('🔧 Popup: Background response:', resp);
+            if (chrome.runtime.lastError) {
+              console.log('🔧 Popup: Runtime error:', chrome.runtime.lastError);
+              return resolve(); // Non-fatal
+            }
+            resolve();
+          });
+        });
+      } catch (_e) {
+        console.error('🔧 Popup: Error sending message to background:', _e);
+        // Ignore background sync issues; local unlock is sufficient for UI
+      }
       masterPasswordInput.value = '';
       loginError.classList.add('hidden');
       await loadDashboard();

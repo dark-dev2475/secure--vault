@@ -19,7 +19,7 @@ export async function deriveKey(password, salt, iterations = 100000) {
 		},
 		keyMaterial,
 		{ name: 'AES-GCM', length: 256 },
-		false,
+		true,
 		['encrypt', 'decrypt']
 	);
 }

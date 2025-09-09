@@ -17,6 +17,7 @@ const SALT_SETTING_ID = 'vault-salt';
 // In-memory state (cleared when extension is unloaded)
 let masterKey = null;
 let isVaultLocked = true;
+const SESSION_KEY_ID = 'session-master-key';
 
 /**
  * Initializes the vault on first use
@@ -116,12 +117,35 @@ export async function unlockVault(masterPassword, autoLockTimeout = 5) {
       });
       
       isVaultLocked = false;
+
+      // Persist master key in session storage to survive SW suspension
+      try {
+        const rawKey = await window.crypto.subtle.exportKey('raw', masterKey);
+        const keyBytes = Array.from(new Uint8Array(rawKey));
+        await chrome.storage.session.set({ [SESSION_KEY_ID]: keyBytes });
+      } catch (e) {
+        console.warn('Could not persist session key:', e);
+      }
       
-      // Notify the service worker to start auto-lock timer
-      chrome.runtime.sendMessage({
-        action: 'unlockVault',
-        lockAfterMinutes: autoLockTimeout
-      });
+      // Fetch user auto-lock setting
+      let userAutoLock = autoLockTimeout; // Default from parameter
+      try {
+        const userSettings = await getSettings('user-settings');
+        if (userSettings) {
+          if (userSettings.autoLockEnabled === false) {
+            userAutoLock = 0; // Disable auto-lock
+          } else if (userSettings.autoLockTime > 0) {
+            userAutoLock = userSettings.autoLockTime;
+          }
+        }
+        console.log(`Using auto-lock timeout: ${userAutoLock} minutes`);
+      } catch (e) {
+        console.error('Error getting user settings:', e);
+      }
+
+      // Background auto-lock is managed via settings and activity timers.
+      // Avoid sending an unlock message here to prevent race conditions
+      // with the background script's state machine.
       
       return true;
     } catch (error) {
@@ -146,7 +170,33 @@ export function lockVault() {
   chrome.runtime.sendMessage({
     action: 'lockVault'
   });
+
+  // Clear session key
+  try {
+    chrome.storage.session.remove(SESSION_KEY_ID);
+  } catch (_e) {}
 }
+
+// Try to rehydrate master key from session storage when module loads
+(async function rehydrateSessionKey() {
+  try {
+    const data = await chrome.storage.session.get(SESSION_KEY_ID);
+    const keyBytes = data && data[SESSION_KEY_ID];
+    if (keyBytes && Array.isArray(keyBytes) && keyBytes.length > 0) {
+      const raw = new Uint8Array(keyBytes).buffer;
+      masterKey = await window.crypto.subtle.importKey(
+        'raw',
+        raw,
+        { name: 'AES-GCM' },
+        false,
+        ['encrypt', 'decrypt']
+      );
+      isVaultLocked = false;
+    }
+  } catch (e) {
+    // Ignore rehydrate failures
+  }
+})();
 
 /**
  * Checks if the vault is currently locked
