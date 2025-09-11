@@ -1,5 +1,6 @@
 // Quick Auto-Lock Test Script
-// Paste this into the browser console on any page to test the auto-lock timer
+// IMPORTANT: Run this in the EXTENSION POPUP console, not webpage console!
+// Right-click extension icon → Inspect → Console tab, then paste this
 
 console.log('🔧 Starting Auto-Lock Timer Test...');
 
@@ -7,34 +8,46 @@ console.log('🔧 Starting Auto-Lock Timer Test...');
 function testDirectUnlock(minutes = 1) {
     console.log(`🔧 Testing direct unlock with ${minutes} minutes...`);
     
-    chrome.runtime.sendMessage({
-        action: 'unlockVault',
-        lockAfterMinutes: minutes
-    }, (response) => {
-        console.log('🔧 Direct unlock response:', response);
-    });
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage({
+            action: 'unlockVault',
+            lockAfterMinutes: minutes
+        }, (response) => {
+            console.log('🔧 Direct unlock response:', response);
+        });
+    } else {
+        console.error('🔧 Chrome runtime not available. Run this in extension popup console!');
+    }
 }
 
 // Test 2: Check if background script is responding
 function testBackgroundPing() {
     console.log('🔧 Testing background script communication...');
     
-    chrome.runtime.sendMessage({
-        action: 'ping'
-    }, (response) => {
-        console.log('🔧 Background ping response:', response);
-    });
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage({
+            action: 'ping'
+        }, (response) => {
+            console.log('🔧 Background ping response:', response);
+        });
+    } else {
+        console.error('🔧 Chrome runtime not available. Run this in extension popup console!');
+    }
 }
 
-// Test 3: Send test auto-lock command
+// Test 3: Send test auto-lock command  
 function testAutoLockCommand() {
     console.log('🔧 Testing auto-lock command...');
     
-    chrome.runtime.sendMessage({
-        action: 'testAutoLock'
-    }, (response) => {
-        console.log('🔧 Test auto-lock response:', response);
-    });
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage({
+            action: 'testAutoLock'
+        }, (response) => {
+            console.log('🔧 Test auto-lock response:', response);
+        });
+    } else {
+        console.error('🔧 Chrome runtime not available. Run this in extension popup console!');
+    }
 }
 
 // Run all tests
